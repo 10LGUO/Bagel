@@ -663,6 +663,34 @@ def main():
     token_window = 0.0
     seqlen_square_window = 0.0
     dense_token_factor, attn_factor = qwen2_flop_coefficients(model.language_model.config)
+
+    # Torch profiler — captures 3 active steps then stops.
+    # Trace written to ./profiler_logs/rank<N>; view with TensorBoard or chrome://tracing.
+    # Set BAGEL_PROFILE=1 to enable; disabled by default to avoid overhead on full runs.
+    _profile_enabled = os.environ.get("BAGEL_PROFILE", "0") == "1"
+    _prof_ctx = torch.profiler.profile(
+        activities=[
+            torch.profiler.ProfilerActivity.CPU,
+            torch.profiler.ProfilerActivity.CUDA,
+        ],
+        schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=1),
+        on_trace_ready=torch.profiler.tensorboard_trace_handler(
+            f"./profiler_logs/rank{dist.get_rank()}"
+        ),
+        record_shapes=True,
+        profile_memory=True,
+        with_stack=False,  # set True for Python call stacks (slower)
+    ) if _profile_enabled else None
+
+    if _prof_ctx is not None:
+        _prof_ctx.__enter__()
+        prof = _prof_ctx
+    else:
+        # No-op stub so prof.step() below is always safe to call.
+        class _NoOpProfiler:
+            def step(self): pass
+        prof = _NoOpProfiler()
+
     for micro_step, data in enumerate(train_loader):
         curr_step = train_step + micro_step // training_args.gradient_accumulation_steps
         if curr_step >= training_args.total_steps:
@@ -733,6 +761,7 @@ def main():
             fsdp_ema_update(ema_model, fsdp_model, decay=training_args.ema)
             optimizer.zero_grad()
         
+        prof.step()
         # Log loss values:
         if curr_step % training_args.log_every == 0:
             total_samples = torch.tensor(len(data['sample_lens']), device=device)
