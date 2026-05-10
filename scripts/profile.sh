@@ -23,6 +23,7 @@ echo ""
 
 BAGEL_PROFILE=1 \
 WANDB_MODE=offline \
+PYTHONPATH=/Bagel \
 torchrun \
   --nnodes=1 \
   --node_rank=0 \
