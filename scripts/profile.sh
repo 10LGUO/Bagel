@@ -37,6 +37,8 @@ torchrun \
     --llm_path "$LLM_PATH" \
     --vae_path "$VAE_PATH" \
     --vit_path "$VIT_PATH" \
+    --interpolate_pos False \
+    --vit_max_num_patch_per_side 27 \
     --layer_module Qwen2MoTDecoderLayer \
     --use_flex True \
     --results_dir "$OUTPUT_DIR" \
