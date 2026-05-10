@@ -10,6 +10,8 @@ set -e
 LLM_PATH=${LLM_PATH:-"weights/llm"}
 VAE_PATH=${VAE_PATH:-"weights/vae/ae.safetensors"}
 VIT_PATH=${VIT_PATH:-"weights/vit"}
+# Note: LLM_PATH must be BAGEL's own LLM weights (weights/llm from BAGEL-7B-MoT),
+# not a standalone Qwen2.5 checkpoint — BAGEL extends the vocab with image tokens.
 DATA_CFG=${DATA_CFG:-"data/configs/example.yaml"}
 OUTPUT_DIR=${OUTPUT_DIR:-"results/profile_run"}
 CKPT_DIR=${CKPT_DIR:-"results/profile_run/checkpoints"}
