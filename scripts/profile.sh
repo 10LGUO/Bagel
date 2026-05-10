@@ -40,6 +40,7 @@ torchrun \
     --results_dir "$OUTPUT_DIR" \
     --checkpoint_dir "$CKPT_DIR" \
     --max_latent_size 32 \
+    --num_shard 4 \
     --num_workers 1 \
     --total_steps 10 \
     --log_every 1 \
