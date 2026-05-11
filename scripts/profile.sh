@@ -5,34 +5,59 @@
 # Usage: bash scripts/profile.sh
 #   Optionally override paths via env vars:
 #     LLM_PATH, VAE_PATH, VIT_PATH, DATA_CFG, OUTPUT_DIR, CKPT_DIR
+#
+# First-time setup: bash scripts/setup_env.sh <HF_TOKEN>
 set -e
 
-LLM_PATH=${LLM_PATH:-"weights/llm"}
-VAE_PATH=${VAE_PATH:-"weights/vae/ae.safetensors"}
-VIT_PATH=${VIT_PATH:-"weights/vit"}
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+LLM_PATH=${LLM_PATH:-"$REPO_DIR/weights/llm"}
+VAE_PATH=${VAE_PATH:-"$REPO_DIR/weights/vae/ae.safetensors"}
+VIT_PATH=${VIT_PATH:-"$REPO_DIR/weights/vit"}
 # Note: LLM_PATH must be BAGEL's own LLM weights (weights/llm from BAGEL-7B-MoT),
 # not a standalone Qwen2.5 checkpoint — BAGEL extends the vocab with image tokens.
-DATA_CFG=${DATA_CFG:-"data/configs/example.yaml"}
-OUTPUT_DIR=${OUTPUT_DIR:-"results/profile_run"}
-CKPT_DIR=${CKPT_DIR:-"results/profile_run/checkpoints"}
+DATA_CFG=${DATA_CFG:-"$REPO_DIR/data/configs/example.yaml"}
+OUTPUT_DIR=${OUTPUT_DIR:-"$REPO_DIR/results/profile_run"}
+CKPT_DIR=${CKPT_DIR:-"$REPO_DIR/results/profile_run/checkpoints"}
 
-mkdir -p "$OUTPUT_DIR" "$CKPT_DIR" profiler_logs
+# --- Preflight checks ---
+missing=0
+for path in "$LLM_PATH" "$VAE_PATH" "$VIT_PATH"; do
+  if [ ! -e "$path" ]; then
+    echo "ERROR: missing weight path: $path"
+    echo "  Run: bash $REPO_DIR/scripts/setup_env.sh <HF_TOKEN>"
+    missing=1
+  fi
+done
+[ $missing -ne 0 ] && exit 1
 
-echo "=== Launching 8-GPU profiling run ==="
-echo "Profiler traces -> ./profiler_logs/rank*"
-echo "To view: tensorboard --logdir ./profiler_logs"
+if grep -q "your_data_path" "$REPO_DIR/data/dataset_info.py" 2>/dev/null; then
+  echo "ERROR: data/dataset_info.py still contains 'your_data_path' placeholders."
+  echo "  Run: bash $REPO_DIR/scripts/setup_env.sh <HF_TOKEN>"
+  exit 1
+fi
+
+mkdir -p "$OUTPUT_DIR" "$CKPT_DIR" "$REPO_DIR/profiler_logs"
+
+echo "=== Launching 4-GPU profiling run ==="
+echo "Repo:          $REPO_DIR"
+echo "LLM weights:   $LLM_PATH"
+echo "VAE weights:   $VAE_PATH"
+echo "VIT weights:   $VIT_PATH"
+echo "Profiler traces -> $REPO_DIR/profiler_logs/rank*"
+echo "To view: tensorboard --logdir $REPO_DIR/profiler_logs"
 echo ""
 
 BAGEL_PROFILE=1 \
 WANDB_MODE=offline \
-PYTHONPATH=/Bagel \
+PYTHONPATH="$REPO_DIR" \
 torchrun \
   --nnodes=1 \
   --node_rank=0 \
   --nproc_per_node=4 \
   --master_addr=127.0.0.1 \
   --master_port=29500 \
-  train/pretrain_unified_navit.py \
+  "$REPO_DIR/train/pretrain_unified_navit.py" \
     --dataset_config_file "$DATA_CFG" \
     --llm_path "$LLM_PATH" \
     --vae_path "$VAE_PATH" \
@@ -56,4 +81,4 @@ torchrun \
 
 echo ""
 echo "=== Done. View traces with: ==="
-echo "  tensorboard --logdir ./profiler_logs --bind_all"
+echo "  tensorboard --logdir $REPO_DIR/profiler_logs --bind_all"
