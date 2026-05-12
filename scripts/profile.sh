@@ -50,6 +50,7 @@ echo ""
 
 BAGEL_PROFILE=1 \
 WANDB_MODE=offline \
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
 PYTHONPATH="$REPO_DIR" \
 torchrun \
   --nnodes=1 \
