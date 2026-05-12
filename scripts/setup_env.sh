@@ -18,7 +18,7 @@ pip install -q --upgrade pip
 pip install -q \
   torch==2.5.1 torchvision==0.20.1 \
   transformers==4.49.0 accelerate safetensors sentencepiece \
-  einops pyarrow scipy opencv-python-headless decord \
+  einops pyarrow pandas scipy opencv-python-headless decord \
   ninja wheel setuptools triton \
   bitsandbytes wandb tensorboard \
   huggingface_hub
