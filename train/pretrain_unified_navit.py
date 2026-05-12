@@ -641,8 +641,16 @@ def main():
                     )
             if training_args.visual_und:
                 vit_max_px = model_args.vit_max_num_patch_per_side * model_args.vit_patch_size
-                vit_args = ds_meta.get("vit_image_transform_args",
-                                       ds_meta.get("image_transform_args", {}))
+                # Use vit_image_transform_args if present; fall back to image_transform_args
+                # only for VLM-type datasets where image_transform_args controls VIT input.
+                # Pure VAE datasets (e.g. t2i_pretrain) have no VIT path — skip them.
+                _VLM_DATASET_TYPES = {"vlm_sft"}
+                if "vit_image_transform_args" in ds_meta:
+                    vit_args = ds_meta["vit_image_transform_args"]
+                elif ds_name in _VLM_DATASET_TYPES:
+                    vit_args = ds_meta.get("image_transform_args", {})
+                else:
+                    vit_args = {}
                 cfg_vit_max = vit_args.get("max_image_size", 0)
                 if cfg_vit_max > vit_max_px:
                     raise ValueError(
