@@ -23,9 +23,10 @@ pip install -q \
   bitsandbytes wandb tensorboard \
   huggingface_hub
 
-# flash_attn must be compiled for the local CUDA version
-pip install -q flash-attn==2.5.8 --no-build-isolation || \
-  echo "WARNING: flash_attn build failed — install manually if needed"
+# flash_attn: install prebuilt wheel matched to torch 2.5 + CUDA 12.x (Python 3.10).
+# Avoids a slow/broken source build when the system CUDA version mismatches PyTorch.
+pip install -q "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3%2Bcu12torch2.5cxx11abiFALSE-cp310-cp310-linux_x86_64.whl" || \
+  echo "WARNING: flash_attn wheel install failed — check CUDA/torch versions and install manually"
 
 echo "=== Downloading sample dataset ==="
 if [ ! -d "$DATA_DIR" ]; then
