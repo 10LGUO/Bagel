@@ -29,7 +29,7 @@ pip install -q flash-attn==2.5.8 --no-build-isolation || \
 
 echo "=== Downloading sample dataset ==="
 if [ ! -d "$DATA_DIR" ]; then
-  wget -q -O /tmp/bagel_example.zip \
+  wget --progress=bar:force -O /tmp/bagel_example.zip \
     https://lf3-static.bytednsdoc.com/obj/eden-cn/nuhojubrps/bagel_example.zip
   unzip -q /tmp/bagel_example.zip -d /data
   echo "Dataset at $DATA_DIR"
