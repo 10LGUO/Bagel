@@ -900,8 +900,8 @@ def main():
             #     os.path.join(training_args.checkpoint_dir, f"{curr_step:07d}", "ema_standard.pt")
             # )
     
-    # Save final checkpoint if not already saved
-    if curr_step > 0:
+    # Save final checkpoint if not already saved (skip if save_every exceeds total_steps)
+    if curr_step > 0 and curr_step % training_args.save_every == 0:
         logger.info(f"Saving final checkpoint at step {curr_step}...")
         # Clear caches and ensure all CUDA operations complete before final checkpoint
         torch.cuda.empty_cache()
